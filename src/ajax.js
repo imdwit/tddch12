@@ -1,21 +1,22 @@
-module.exports = {
-	create: function() {
-		var options = [
-			function() {
-				return new ActiveXObject("Microsoft.XMLHTTP");
-			},
-			function() {
-				return new XMLHttpRequest();
-			}
-		];
+var xhr;
+var ajax = {};
 
-		for(var i = 0; i < options.length; i++) {
-			try {
-				return options[i]();
-			} catch(e) {}
-		}
-		return null;
+var options = [
+	function() {
+		return new ActiveXObject("Microsoft.XMLHTTP");
+	},
+	function() {
+		return new XMLHttpRequest();
 	}
+];
+
+for(var i = 0; i < options.length; i++) {
+	try {
+		xhr = options[i]();
+		ajax.create = options[i];
+		break;
+	} catch(e) {}
+}
 
 
-};//end exports
+module.exports = ajax;
