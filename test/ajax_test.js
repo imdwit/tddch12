@@ -65,6 +65,7 @@ test('tes should add onreadystatechange handler', function(assert) {
 	ajax.get(url);
 
 	assert.equal(typeof xhr.onreadystatechange, 'function');
+	ajax.create = ajaxCreate;
 	assert.end();
 });
 
@@ -78,6 +79,38 @@ test('test should call send', function(assert) {
 	ajax.get(url);
 
 	assert.ok(xhr.send.called);
+	ajax.create = ajaxCreate;
+	assert.end();
+});
 
+
+test('test should call success handler for status 200', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	xhr.readyState = 4;
+	xhr.status = 200;
+	var success = tddjs.stubFn();
+	ajax.get(url, {success: success});
+	xhr.onreadystatechange();
+	assert.ok(success.called);
+	ajax.create = ajaxCreate;
+	assert.end();
+});
+
+
+test('tes should not throw error without success handler', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	xhr.readyState = 4;
+	xhr.status = 200;
+	ajax.get(url);
+	assert.doesNotThrow(function() {
+		xhr.onreadystatechange();
+	})
+	ajax.create = ajaxCreate;
 	assert.end();
 });

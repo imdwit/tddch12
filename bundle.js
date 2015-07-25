@@ -27,15 +27,30 @@ for (var i = 0; i < options.length; i++) {
 	} catch (e) {}
 }
 
-function get(url) {
+function get(url, options) {
+	options = options || {};
 	if(typeof url !== 'string') {
 		throw new TypeError('URL must be a string');
 	}
 
 	var transport = ajax.create();
-	transport.onreadystatechange = function(){};
+	transport.onreadystatechange = function(){
+		if(transport.readyState === 4) {
+
+			requestComplete(transport, options);
+		}
+	};
+
+
 	transport.open('GET', url, true);
 	transport.send();
+}
+
+function requestComplete(transport, options) {
+	if(transport.status === 200) {
+			if(typeof options.success === 'function')
+				options.success(transport);
+	}
 }
 
 ajax.get = get;
@@ -138,6 +153,7 @@ test('tes should add onreadystatechange handler', function(assert) {
 	ajax.get(url);
 
 	assert.equal(typeof xhr.onreadystatechange, 'function');
+	ajax.create = ajaxCreate;
 	assert.end();
 });
 
@@ -151,7 +167,39 @@ test('test should call send', function(assert) {
 	ajax.get(url);
 
 	assert.ok(xhr.send.called);
+	ajax.create = ajaxCreate;
+	assert.end();
+});
 
+
+test('test should call success handler for status 200', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	xhr.readyState = 4;
+	xhr.status = 200;
+	var success = tddjs.stubFn();
+	ajax.get(url, {success: success});
+	xhr.onreadystatechange();
+	assert.ok(success.called);
+	ajax.create = ajaxCreate;
+	assert.end();
+});
+
+
+test('tes should not throw error without success handler', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	xhr.readyState = 4;
+	xhr.status = 200;
+	ajax.get(url);
+	assert.doesNotThrow(function() {
+		xhr.onreadystatechange();
+	})
+	ajax.create = ajaxCreate;
 	assert.end();
 });
 

@@ -26,15 +26,30 @@ for (var i = 0; i < options.length; i++) {
 	} catch (e) {}
 }
 
-function get(url) {
+function get(url, options) {
+	options = options || {};
 	if(typeof url !== 'string') {
 		throw new TypeError('URL must be a string');
 	}
 
 	var transport = ajax.create();
-	transport.onreadystatechange = function(){};
+	transport.onreadystatechange = function(){
+		if(transport.readyState === 4) {
+
+			requestComplete(transport, options);
+		}
+	};
+
+
 	transport.open('GET', url, true);
 	transport.send();
+}
+
+function requestComplete(transport, options) {
+	if(transport.status === 200) {
+			if(typeof options.success === 'function')
+				options.success(transport);
+	}
 }
 
 ajax.get = get;
