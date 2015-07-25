@@ -27,10 +27,28 @@ for (var i = 0; i < options.length; i++) {
 	} catch (e) {}
 }
 
+function get(url) {
+	if(typeof url !== 'string') {
+		throw new TypeError('URL must be a string');
+	}
 
+	var transport = ajax.create();
+	transport.onreadystatechange = function(){};
+	transport.open('GET', url, true);
+	transport.send();
+}
+
+ajax.get = get;
 module.exports = ajax;
 
-},{"./tdd":2}],2:[function(require,module,exports){
+},{"./tdd":3}],2:[function(require,module,exports){
+var tdd = require('./tdd');
+module.exports = {
+	open: tdd.stubFn(),
+	send: tdd.stubFn()
+};
+
+},{"./tdd":3}],3:[function(require,module,exports){
 module.exports = {
 	isHostMethod: function(obj, prop) {
 		var type = typeof obj[prop];
@@ -38,13 +56,27 @@ module.exports = {
 		return type == "function" ||
 					(type == "object" && !!object[property]) ||
 					type == "unknown";
+	},
+	stubFn: function(returnValue) {
+		var fn = function() {
+			fn.called = true;
+			fn.args = arguments;
+			return returnValue;
+		};
+
+		fn.called = false;
+
+		return fn;
 	}
 }
 
-},{}],3:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 var test = require('tape');
 var ajax = require("../src/ajax");
 var tddjs = require('../src/tdd');
+var fakexhr = require("../src/fakexhr");
+var before = test;
+var after = test;
 
 test('test should return XMLHttpRequest object', function(assert) {
 	var xhr = ajax.create();
@@ -56,7 +88,74 @@ test('test should return XMLHttpRequest object', function(assert) {
 	assert.end();
 });
 
-},{"../src/ajax":1,"../src/tdd":2,"tape":4}],4:[function(require,module,exports){
+
+test('test should definte get method', function(assert) {
+	assert.equal(typeof ajax.get, 'function');
+
+	assert.end();
+});
+
+
+test('test should throw error without url', function(assert) {
+	assert.throws(function(){
+		ajax.get();
+	}, 'TypeError');
+
+	assert.end();
+});
+
+test('test should obtain an XMLHttpRequest object', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+
+	ajax.get('/url');
+
+	assert.ok(ajax.create.called, 'ajax create is called');
+	ajax.create = ajaxCreate;
+	assert.end();
+});
+
+
+test('test should call open with method, url, async flag', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	ajax.get(url);
+
+	assert.deepEqual(['GET', url, true], xhr.open.args);
+	ajax.create = ajaxCreate;
+	assert.end();
+});
+
+
+test('tes should add onreadystatechange handler', function(assert) {
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	ajax.get(url);
+
+	assert.equal(typeof xhr.onreadystatechange, 'function');
+	assert.end();
+});
+
+
+test('test should call send', function(assert) {
+
+	var ajaxCreate = ajax.create;
+	var xhr = Object.create(fakexhr);
+	ajax.create = tddjs.stubFn(xhr);
+	var url = 'url';
+	ajax.get(url);
+
+	assert.ok(xhr.send.called);
+
+	assert.end();
+});
+
+},{"../src/ajax":1,"../src/fakexhr":2,"../src/tdd":3,"tape":5}],5:[function(require,module,exports){
 (function (process){
 var defined = require('defined');
 var createDefaultStream = require('./lib/default_stream');
@@ -200,7 +299,7 @@ function createHarness (conf_) {
 }
 
 }).call(this,require('_process'))
-},{"./lib/default_stream":5,"./lib/results":6,"./lib/test":7,"_process":26,"defined":11,"through":15}],5:[function(require,module,exports){
+},{"./lib/default_stream":6,"./lib/results":7,"./lib/test":8,"_process":27,"defined":12,"through":16}],6:[function(require,module,exports){
 (function (process){
 var through = require('through');
 var fs = require('fs');
@@ -235,7 +334,7 @@ module.exports = function () {
 };
 
 }).call(this,require('_process'))
-},{"_process":26,"fs":16,"through":15}],6:[function(require,module,exports){
+},{"_process":27,"fs":17,"through":16}],7:[function(require,module,exports){
 (function (process){
 var EventEmitter = require('events').EventEmitter;
 var inherits = require('inherits');
@@ -429,7 +528,7 @@ function has (obj, prop) {
 }
 
 }).call(this,require('_process'))
-},{"_process":26,"events":22,"inherits":12,"object-inspect":13,"resumer":14,"through":15}],7:[function(require,module,exports){
+},{"_process":27,"events":23,"inherits":13,"object-inspect":14,"resumer":15,"through":16}],8:[function(require,module,exports){
 (function (process,__dirname){
 var deepEqual = require('deep-equal');
 var defined = require('defined');
@@ -929,7 +1028,7 @@ Test.skip = function (name_, _opts, _cb) {
 
 
 }).call(this,require('_process'),"/../node_modules/tape/lib")
-},{"_process":26,"deep-equal":8,"defined":11,"events":22,"inherits":12,"path":25}],8:[function(require,module,exports){
+},{"_process":27,"deep-equal":9,"defined":12,"events":23,"inherits":13,"path":26}],9:[function(require,module,exports){
 var pSlice = Array.prototype.slice;
 var objectKeys = require('./lib/keys.js');
 var isArguments = require('./lib/is_arguments.js');
@@ -1025,7 +1124,7 @@ function objEquiv(a, b, opts) {
   return typeof a === typeof b;
 }
 
-},{"./lib/is_arguments.js":9,"./lib/keys.js":10}],9:[function(require,module,exports){
+},{"./lib/is_arguments.js":10,"./lib/keys.js":11}],10:[function(require,module,exports){
 var supportsArgumentsClass = (function(){
   return Object.prototype.toString.call(arguments)
 })() == '[object Arguments]';
@@ -1047,7 +1146,7 @@ function unsupported(object){
     false;
 };
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 exports = module.exports = typeof Object.keys === 'function'
   ? Object.keys : shim;
 
@@ -1058,14 +1157,14 @@ function shim (obj) {
   return keys;
 }
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 module.exports = function () {
     for (var i = 0; i < arguments.length; i++) {
         if (arguments[i] !== undefined) return arguments[i];
     }
 };
 
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1090,7 +1189,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],13:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 module.exports = function inspect_ (obj, opts, depth, seen) {
     if (!opts) opts = {};
     
@@ -1239,7 +1338,7 @@ function inspectString (str) {
     }
 }
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 (function (process){
 var through = require('through');
 var nextTick = typeof setImmediate !== 'undefined'
@@ -1272,7 +1371,7 @@ module.exports = function (write, end) {
 };
 
 }).call(this,require('_process'))
-},{"_process":26,"through":15}],15:[function(require,module,exports){
+},{"_process":27,"through":16}],16:[function(require,module,exports){
 (function (process){
 var Stream = require('stream')
 
@@ -1384,11 +1483,11 @@ function through (write, end, opts) {
 
 
 }).call(this,require('_process'))
-},{"_process":26,"stream":40}],16:[function(require,module,exports){
+},{"_process":27,"stream":41}],17:[function(require,module,exports){
 
-},{}],17:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],18:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
+arguments[4][17][0].apply(exports,arguments)
+},{"dup":17}],19:[function(require,module,exports){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -2827,7 +2926,7 @@ function decodeUtf8Char (str) {
   }
 }
 
-},{"base64-js":19,"ieee754":20,"is-array":21}],19:[function(require,module,exports){
+},{"base64-js":20,"ieee754":21,"is-array":22}],20:[function(require,module,exports){
 var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 
 ;(function (exports) {
@@ -2953,7 +3052,7 @@ var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
 	exports.fromByteArray = uint8ToBase64
 }(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
 
-},{}],20:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = nBytes * 8 - mLen - 1
@@ -3039,7 +3138,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],21:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 
 /**
  * isArray
@@ -3074,7 +3173,7 @@ module.exports = isArray || function (val) {
   return !! val && '[object Array]' == str.call(val);
 };
 
-},{}],22:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -3377,14 +3476,14 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],23:[function(require,module,exports){
-arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],24:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"dup":13}],25:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],25:[function(require,module,exports){
+},{}],26:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -3612,7 +3711,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":26}],26:[function(require,module,exports){
+},{"_process":27}],27:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -3704,10 +3803,10 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],27:[function(require,module,exports){
+},{}],28:[function(require,module,exports){
 module.exports = require("./lib/_stream_duplex.js")
 
-},{"./lib/_stream_duplex.js":28}],28:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":29}],29:[function(require,module,exports){
 // a duplex stream is just a stream that is both readable and writable.
 // Since JS doesn't have multiple prototypal inheritance, this class
 // prototypally inherits from Readable, and then parasitically from
@@ -3791,7 +3890,7 @@ function forEach (xs, f) {
   }
 }
 
-},{"./_stream_readable":30,"./_stream_writable":32,"core-util-is":33,"inherits":23,"process-nextick-args":34}],29:[function(require,module,exports){
+},{"./_stream_readable":31,"./_stream_writable":33,"core-util-is":34,"inherits":24,"process-nextick-args":35}],30:[function(require,module,exports){
 // a passthrough stream.
 // basically just the most minimal sort of Transform stream.
 // Every written chunk gets output as-is.
@@ -3820,7 +3919,7 @@ PassThrough.prototype._transform = function(chunk, encoding, cb) {
   cb(null, chunk);
 };
 
-},{"./_stream_transform":31,"core-util-is":33,"inherits":23}],30:[function(require,module,exports){
+},{"./_stream_transform":32,"core-util-is":34,"inherits":24}],31:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -4783,7 +4882,7 @@ function indexOf (xs, x) {
 }
 
 }).call(this,require('_process'))
-},{"./_stream_duplex":28,"_process":26,"buffer":18,"core-util-is":33,"events":22,"inherits":23,"isarray":24,"process-nextick-args":34,"string_decoder/":41,"util":17}],31:[function(require,module,exports){
+},{"./_stream_duplex":29,"_process":27,"buffer":19,"core-util-is":34,"events":23,"inherits":24,"isarray":25,"process-nextick-args":35,"string_decoder/":42,"util":18}],32:[function(require,module,exports){
 // a transform stream is a readable/writable stream where you do
 // something with the data.  Sometimes it's called a "filter",
 // but that's not a great name for it, since that implies a thing where
@@ -4982,7 +5081,7 @@ function done(stream, er) {
   return stream.push(null);
 }
 
-},{"./_stream_duplex":28,"core-util-is":33,"inherits":23}],32:[function(require,module,exports){
+},{"./_stream_duplex":29,"core-util-is":34,"inherits":24}],33:[function(require,module,exports){
 // A bit simpler than readable streams.
 // Implement an async ._write(chunk, cb), and it'll handle all
 // the drain event emission and buffering.
@@ -5504,7 +5603,7 @@ function endWritable(stream, state, cb) {
   state.ended = true;
 }
 
-},{"./_stream_duplex":28,"buffer":18,"core-util-is":33,"events":22,"inherits":23,"process-nextick-args":34,"util-deprecate":35}],33:[function(require,module,exports){
+},{"./_stream_duplex":29,"buffer":19,"core-util-is":34,"events":23,"inherits":24,"process-nextick-args":35,"util-deprecate":36}],34:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -5614,7 +5713,7 @@ function objectToString(o) {
   return Object.prototype.toString.call(o);
 }
 }).call(this,require("buffer").Buffer)
-},{"buffer":18}],34:[function(require,module,exports){
+},{"buffer":19}],35:[function(require,module,exports){
 (function (process){
 'use strict';
 module.exports = nextTick;
@@ -5631,7 +5730,7 @@ function nextTick(fn) {
 }
 
 }).call(this,require('_process'))
-},{"_process":26}],35:[function(require,module,exports){
+},{"_process":27}],36:[function(require,module,exports){
 (function (global){
 
 /**
@@ -5697,10 +5796,10 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],36:[function(require,module,exports){
+},{}],37:[function(require,module,exports){
 module.exports = require("./lib/_stream_passthrough.js")
 
-},{"./lib/_stream_passthrough.js":29}],37:[function(require,module,exports){
+},{"./lib/_stream_passthrough.js":30}],38:[function(require,module,exports){
 var Stream = (function (){
   try {
     return require('st' + 'ream'); // hack to fix a circular dependency issue when used with browserify
@@ -5714,13 +5813,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":28,"./lib/_stream_passthrough.js":29,"./lib/_stream_readable.js":30,"./lib/_stream_transform.js":31,"./lib/_stream_writable.js":32}],38:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":29,"./lib/_stream_passthrough.js":30,"./lib/_stream_readable.js":31,"./lib/_stream_transform.js":32,"./lib/_stream_writable.js":33}],39:[function(require,module,exports){
 module.exports = require("./lib/_stream_transform.js")
 
-},{"./lib/_stream_transform.js":31}],39:[function(require,module,exports){
+},{"./lib/_stream_transform.js":32}],40:[function(require,module,exports){
 module.exports = require("./lib/_stream_writable.js")
 
-},{"./lib/_stream_writable.js":32}],40:[function(require,module,exports){
+},{"./lib/_stream_writable.js":33}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -5849,7 +5948,7 @@ Stream.prototype.pipe = function(dest, options) {
   return dest;
 };
 
-},{"events":22,"inherits":23,"readable-stream/duplex.js":27,"readable-stream/passthrough.js":36,"readable-stream/readable.js":37,"readable-stream/transform.js":38,"readable-stream/writable.js":39}],41:[function(require,module,exports){
+},{"events":23,"inherits":24,"readable-stream/duplex.js":28,"readable-stream/passthrough.js":37,"readable-stream/readable.js":38,"readable-stream/transform.js":39,"readable-stream/writable.js":40}],42:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -6072,4 +6171,4 @@ function base64DetectIncompleteChar(buffer) {
   this.charLength = this.charReceived ? 3 : 0;
 }
 
-},{"buffer":18}]},{},[3]);
+},{"buffer":19}]},{},[4]);

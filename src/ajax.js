@@ -26,5 +26,16 @@ for (var i = 0; i < options.length; i++) {
 	} catch (e) {}
 }
 
+function get(url) {
+	if(typeof url !== 'string') {
+		throw new TypeError('URL must be a string');
+	}
 
+	var transport = ajax.create();
+	transport.onreadystatechange = function(){};
+	transport.open('GET', url, true);
+	transport.send();
+}
+
+ajax.get = get;
 module.exports = ajax;
