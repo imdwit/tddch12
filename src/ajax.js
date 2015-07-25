@@ -1,3 +1,4 @@
+var tdd = require('./tdd');
 var xhr;
 var ajax = {};
 
@@ -10,12 +11,19 @@ var options = [
 	}
 ];
 
-for(var i = 0; i < options.length; i++) {
+for (var i = 0; i < options.length; i++) {
 	try {
 		xhr = options[i]();
-		ajax.create = options[i];
-		break;
-	} catch(e) {}
+
+		if (typeof xhr.readyState == 'number' &&
+			tdd.isHostMethod(xhr, 'open') &&
+			tdd.isHostMethod(xhr, 'send') &&
+			tdd.isHostMethod(xhr, 'setRequestHeader')
+		) {
+			ajax.create = options[i];
+			break;
+		}
+	} catch (e) {}
 }
 
 

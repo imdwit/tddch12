@@ -1,4 +1,5 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+var tdd = require('./tdd');
 var xhr;
 var ajax = {};
 
@@ -11,18 +12,25 @@ var options = [
 	}
 ];
 
-for(var i = 0; i < options.length; i++) {
+for (var i = 0; i < options.length; i++) {
 	try {
 		xhr = options[i]();
-		ajax.create = options[i];
-		break;
-	} catch(e) {}
+
+		if (typeof xhr.readyState == 'number' &&
+			tdd.isHostMethod(xhr, 'open') &&
+			tdd.isHostMethod(xhr, 'send') &&
+			tdd.isHostMethod(xhr, 'setRequestHeader')
+		) {
+			ajax.create = options[i];
+			break;
+		}
+	} catch (e) {}
 }
 
 
 module.exports = ajax;
 
-},{}],2:[function(require,module,exports){
+},{"./tdd":2}],2:[function(require,module,exports){
 module.exports = {
 	isHostMethod: function(obj, prop) {
 		var type = typeof obj[prop];
