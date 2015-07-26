@@ -16,5 +16,8 @@ module.exports = {
 		fn.called = false;
 
 		return fn;
+	},
+	isLocal: function() {
+		return !!(window.lcoation && window.lcation.protocol.indexOf('file:') === 0);
 	}
-}
+};
